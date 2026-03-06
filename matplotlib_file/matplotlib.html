@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matplotlib Pyplot Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Fira+Code&display=swap');
+        
+        :root {
+            --bg-dark: #111827;
+            --bg-light: #1f2937;
+            --primary: #38bdf8; /* Light Blue */
+            --secondary: #34d399; /* Green */
+            --accent: #f59e0b; /* Amber */
+            --text-light: #e5e7eb;
+            --text-dark: #9ca3af;
+            --border: #374151;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        .main-container {
+            max-width: 7xl;
+            margin: auto;
+            padding: 2rem;
+        }
+
+        .plot-card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .plot-card {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .plot-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px var(--primary);
+        }
+        .plot-card .plot-icon { font-size: 3rem; color: var(--accent); }
+        .plot-card .plot-title { font-size: 1.5rem; font-weight: 700; margin-top: 0.5rem; color: var(--text-light); }
+        .plot-card .plot-desc { font-size: 0.9rem; color: var(--text-dark); }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 50;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 48rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .tabs { display: flex; border-bottom: 2px solid var(--border); }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-dark);
+            border-bottom: 3px solid transparent;
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .tab:hover { color: var(--text-light); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        .tab-content { padding-top: 1.5rem; min-height: 300px; max-height: 60vh; overflow-y: auto;}
+        .content-pane { display: none; }
+        .content-pane.active { display: block; animation: fadeIn 0.5s ease; }
+        
+        .code-block {
+            background-color: var(--bg-dark);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Fira Code', monospace;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        .code-block .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: var(--border);
+            color: var(--text-light);
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+         .code-block .copy-btn:hover {
+            background-color: var(--primary);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl font-bold">A Beginner's Guide to Matplotlib's Pyplot</h1>
+            <p class="text-xl text-gray-400 mt-2">Learn to create powerful visualizations in Python.</p>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg mb-10">
+            <h2 class="text-2xl font-bold text-secondary mb-3">Sample Dataset</h2>
+            <p class="text-gray-300 mb-4">You can use this dataset to try out the examples below. Just copy and paste it into your Python script.</p>
+            <div class="code-block">
+                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><code>
+# Sample Data for Visualization
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+sales = [22, 25, 30, 35, 42, 45, 50, 48, 43, 38, 32, 28]
+ad_spend = [1.5, 1.8, 2.0, 2.5, 3.0, 3.2, 3.5, 3.3, 3.1, 2.7, 2.4, 2.0]
+customer_satisfaction = [7.5, 7.8, 8.0, 8.2, 8.5, 8.6, 8.8, 8.7, 8.4, 8.1, 7.9, 7.6]
+student_scores = [55, 62, 68, 71, 75, 78, 81, 83, 85, 88, 92, 95, 98]
+product_categories = ['Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods']
+units_sold = [150, 300, 500, 200, 250]
+</code></pre>
+            </div>
+        </div>
+
+        <div id="plot-types-container" class="plot-card-container">
+            <!-- Plot cards will be generated by JS -->
+        </div>
+    </div>
+
+    <div id="plot-modal" class="modal-overlay">
+        <div class="modal-content">
+             <div class="flex justify-between items-center">
+                <h2 id="modal-title" class="text-3xl font-bold"></h2>
+                <button id="close-modal-btn" class="text-2xl font-bold">&times;</button>
+            </div>
+            <div class="tabs mt-6">
+                <div class="tab active" data-tab="when-to-use">When to Use</div>
+                <div class="tab" data-tab="example">Code Example</div>
+                <div class="tab" data-tab="attributes">Attributes Explained</div>
+                <div class="tab" data-tab="errors">Potential Errors</div>
+            </div>
+            <div class="tab-content">
+                <div id="when-to-use-pane" class="content-pane active"></div>
+                <div id="example-pane" class="content-pane"></div>
+                <div id="attributes-pane" class="content-pane"></div>
+                <div id="errors-pane" class="content-pane"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const plotData = {
+            "Line Plot": {
+                icon: '📈',
+                description: 'Ideal for showing trends over a continuous interval or time span.',
+                when_to_use: `
+                    <p>Use a <strong>Line Plot</strong> when you want to visualize data that changes over time or another continuous variable. It's excellent for tracking trends, patterns, and fluctuations.</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Tracking stock prices over a year.</li>
+                        <li>Monitoring monthly temperature changes.</li>
+                        <li>Showing website traffic over a week.</li>
+                    </ul>`,
+                example: `
+                    import matplotlib.pyplot as plt
+
+                    # Data from the sample dataset
+                    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    sales = [22, 25, 30, 35, 42, 45, 50, 48, 43, 38, 32, 28]
+
+                    # Create the plot
+                    plt.figure(figsize=(10, 6))
+                    plt.plot(months, sales)
+
+                    # Add titles and labels
+                    plt.title('Monthly Sales Data')
+                    plt.xlabel('Month')
+                    plt.ylabel('Sales (in thousands)')
+                    
+                    # Display the plot
+                    plt.show()`,
+                attributes: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>plt.figure(figsize=(width, height))</b>: Creates a new figure to draw the plot on. <code>figsize</code> is an optional tuple that sets the width and height of the plot in inches.</li>
+                        <li><b>plt.plot(x_data, y_data)</b>: The core function that plots y versus x as lines and/or markers. It takes two main arguments: the data for the x-axis and the data for the y-axis.</li>
+                        <li><b>plt.title('Your Title')</b>: Sets the main title for the plot.</li>
+                        <li><b>plt.xlabel('X-axis Label')</b>: Sets the label for the horizontal (x) axis.</li>
+                        <li><b>plt.ylabel('Y-axis Label')</b>: Sets the label for the vertical (y) axis.</li>
+                        <li><b>plt.show()</b>: Displays the figure. This should always be the last step.</li>
+                    </ul>`,
+                errors: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>ValueError: x and y must have same first dimension</b>: This is the most common error. It means the lists you provided for the x-axis and y-axis have different numbers of elements. Ensure they are the same length.</li>
+                        <li><b>Plot doesn't appear</b>: You probably forgot to call <code>plt.show()</code> at the end of your script. Without it, the plot is created in memory but never displayed.</li>
+                    </ul>`
+            },
+            "Bar Chart": {
+                icon: '📊',
+                description: 'Perfect for comparing quantities across different categories.',
+                 when_to_use: `
+                    <p>Use a <strong>Bar Chart</strong> to compare discrete categories. It represents categorical data with rectangular bars, where the height or length of the bar is proportional to the value it represents.</p>
+                     <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Comparing sales figures across different products.</li>
+                        <li>Showing population numbers for different countries.</li>
+                        <li>Visualizing the number of votes for different candidates.</li>
+                    </ul>`,
+                example: `
+                    import matplotlib.pyplot as plt
+
+                    # Data from the sample dataset
+                    product_categories = ['Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods']
+                    units_sold = [150, 300, 500, 200, 250]
+
+                    # Create the bar chart
+                    plt.figure(figsize=(10, 6))
+                    plt.bar(product_categories, units_sold, color='skyblue')
+
+                    # Add titles and labels
+                    plt.title('Units Sold per Product Category')
+                    plt.xlabel('Product Category')
+                    plt.ylabel('Units Sold')
+                    
+                    plt.show()`,
+                attributes: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>plt.bar(categories, values)</b>: Creates a bar chart. The first argument is a list of category names (strings), and the second is a list of their corresponding numerical values.</li>
+                        <li><b>color='colorname'</b>: An optional argument within <code>plt.bar()</code> to set the color of the bars. You can use color names like 'skyblue', 'salmon', or hex codes like '#34D399'.</li>
+                        <li><b>plt.xticks(rotation=angle)</b>: Can be used to rotate the labels on the x-axis if they overlap. For example, <code>plt.xticks(rotation=45)</code>.</li>
+                    </ul>`,
+                errors: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>Length mismatch</b>: Just like line plots, the number of categories must exactly match the number of values.</li>
+                        <li><b>TypeError: unsupported operand type(s)</b>: You might be trying to plot non-numerical data on the value axis. The second argument to <code>plt.bar()</code> must be numbers.</li>
+                    </ul>`
+            },
+            "Scatter Plot": {
+                icon: 'Scatter Plot Icon',
+                description: 'Used to observe relationships and correlations between two numeric variables.',
+                when_to_use: `
+                    <p>Use a <strong>Scatter Plot</strong> to investigate the relationship between two numerical variables. Each dot on the plot represents a single data point. It's great for identifying correlations, clusters, and outliers.</p>
+                     <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Comparing advertising spend vs. sales to see if they are related.</li>
+                        <li>Plotting a person's height vs. weight.</li>
+                        <li>Visualizing temperature vs. ice cream sales.</li>
+                    </ul>`,
+                example: `
+                    import matplotlib.pyplot as plt
+
+                    # Data from the sample dataset
+                    ad_spend = [1.5, 1.8, 2.0, 2.5, 3.0, 3.2, 3.5, 3.3, 3.1, 2.7, 2.4, 2.0]
+                    sales = [22, 25, 30, 35, 42, 45, 50, 48, 43, 38, 32, 28]
+
+                    # Create the scatter plot
+                    plt.figure(figsize=(10, 6))
+                    plt.scatter(ad_spend, sales, color='coral')
+
+                    # Add titles and labels
+                    plt.title('Ad Spend vs. Sales')
+                    plt.xlabel('Advertising Spend (in thousands)')
+                    plt.ylabel('Sales (in thousands)')
+                    
+                    plt.show()`,
+                attributes: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>plt.scatter(x_data, y_data)</b>: Creates the plot. Both arguments must be sequences of numbers of the same length.</li>
+                        <li><b>color='...'</b>: Sets the color of the markers.</li>
+                        <li><b>marker='...'</b>: Changes the shape of the markers. For example, <code>marker='x'</code> or <code>marker='^'</code>.</li>
+                        <li><b>alpha=value</b>: Sets the transparency of the markers (a value between 0 and 1). Useful for plots with many overlapping points.</li>
+                    </ul>`,
+                errors: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>Length mismatch</b>: Again, the x and y data lists must have the same number of elements.</li>
+                        <li><b>Data type issues</b>: Both axes must represent numerical data. You cannot create a scatter plot with categorical data on one of the axes (a bar chart is better for that).</li>
+                    </ul>`
+            },
+             "Histogram": {
+                icon: 'Histogram Icon',
+                description: 'Display the distribution of a single numerical dataset.',
+                 when_to_use: `
+                    <p>Use a <strong>Histogram</strong> to understand the distribution of a single continuous variable. It groups numbers into ranges (bins) and the height of the bar shows how many data points fall into that range.</p>
+                     <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Understanding the distribution of exam scores for a class of students.</li>
+                        <li>Visualizing the distribution of house prices in a neighborhood.</li>
+                        <li>Showing the frequency of different age groups in a population.</li>
+                    </ul>`,
+                example: `
+                    import matplotlib.pyplot as plt
+
+                    # Data from the sample dataset
+                    student_scores = [55, 62, 68, 71, 75, 78, 81, 83, 85, 88, 92, 95, 98]
+
+                    # Create the histogram
+                    plt.figure(figsize=(10, 6))
+                    plt.hist(student_scores, bins=5, color='mediumseagreen', edgecolor='black')
+
+                    # Add titles and labels
+                    plt.title('Distribution of Student Scores')
+                    plt.xlabel('Score')
+                    plt.ylabel('Frequency')
+                    
+                    plt.show()`,
+                attributes: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>plt.hist(data)</b>: The main function, which takes a single list of numerical data.</li>
+                        <li><b>bins=number</b>: An optional but important argument that specifies how many bins (bars) to divide the data into. Experimenting with this number can reveal different patterns.</li>
+                        <li><b>edgecolor='...'</b>: Adds a border around the bars, which can make the histogram easier to read.</li>
+                    </ul>`,
+                errors: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>Input must be 1D</b>: The <code>plt.hist()</code> function only takes a single list or array of numbers. You cannot pass it two lists like you would for a line or scatter plot.</li>
+                        <li><b>Empty plot</b>: This can happen if the bin size is too large or if all your data points fall into a single bin. Try adjusting the <code>bins</code> parameter.</li>
+                    </ul>`
+            },
+            "Pie Chart": {
+                icon: 'Pie Chart Icon',
+                description: 'Show the proportions of a whole, where each slice represents a category.',
+                 when_to_use: `
+                    <p>A <strong>Pie Chart</strong> is best used to show a "part-to-whole" relationship for categorical data. It's effective when you have a small number of categories (usually less than 7) that add up to a meaningful total (100%).</p>
+                     <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li>Showing market share percentages for different companies.</li>
+                        <li>Visualizing budget allocation for different departments.</li>
+                        <li>Displaying survey results for a multiple-choice question.</li>
+                    </ul>
+                    <p class="mt-4 font-semibold text-amber-400"><strong>Note:</strong> While popular, pie charts can be misleading if not used carefully. Bar charts are often a better alternative for comparison.</p>`,
+                example: `
+                    import matplotlib.pyplot as plt
+
+                    # Data from the sample dataset
+                    product_categories = ['Electronics', 'Clothing', 'Groceries', 'Books', 'Home Goods']
+                    units_sold = [150, 300, 500, 200, 250]
+
+                    # Create the pie chart
+                    plt.figure(figsize=(8, 8))
+                    plt.pie(units_sold, labels=product_categories, autopct='%1.1f%%', startangle=140)
+
+                    # Add a title
+                    plt.title('Proportion of Units Sold by Category')
+                    plt.axis('equal') # Equal aspect ratio ensures that pie is drawn as a circle.
+                    
+                    plt.show()`,
+                attributes: `
+                     <ul class="list-disc list-inside space-y-3">
+                        <li><b>plt.pie(values, labels=category_names)</b>: The main function. It takes a list of numerical values and an optional <code>labels</code> list for the category names.</li>
+                        <li><b>autopct='%1.1f%%'</b>: This is a string formatter that displays the percentage of each slice on the chart itself. <code>%1.1f%%</code> means format as a floating-point number with one decimal place, followed by a '%' sign.</li>
+                        <li><b>startangle=number</b>: Rotates the starting point of the pie chart by a specified degree. This is for aesthetics.</li>
+                        <li><b>plt.axis('equal')</b>: Ensures the pie chart is circular and not an oval shape.</li>
+                    </ul>`,
+                errors: `
+                    <ul class="list-disc list-inside space-y-3">
+                        <li><b>Negative values</b>: Pie charts cannot represent negative values and will result in an error or unexpected output. All values in your data must be positive.</li>
+                        <li><b>Too many slices</b>: If you have too many categories, the chart becomes cluttered and impossible to read. A bar chart is a much better choice in this scenario.</li>
+                    </ul>`
+            }
+        };
+
+        const plotContainer = document.getElementById('plot-types-container');
+        const modal = document.getElementById('plot-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const tabs = document.querySelectorAll('.tab');
+        const contentPanes = document.querySelectorAll('.content-pane');
+
+        function init() {
+            // Create plot cards
+            for (const plotName in plotData) {
+                const plot = plotData[plotName];
+                const card = document.createElement('div');
+                card.className = 'plot-card';
+                
+                let iconContent;
+                if (plotName === 'Scatter Plot') {
+                    iconContent = `<svg class="plot-icon inline-block" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M8 6a2 2 0 1 1-4 0a2 2 0 0 1 4 0m-2 8a2 2 0 1 0 0 4a2 2 0 0 0 0-4m-4-2a2 2 0 1 0 0 4a2 2 0 0 0 0-4m12-4a2 2 0 1 0 0-4a2 2 0 0 0 0 4m2 8a2 2 0 1 1-4 0a2 2 0 0 1 4 0m2-6a2 2 0 1 0 0-4a2 2 0 0 0 0 4m4 4a2 2 0 1 1-4 0a2 2 0 0 1 4 0m2 8a2 2 0 1 0 0-4a2 2 0 0 0 0 4m-6-2a2 2 0 1 0 0-4a2 2 0 0 0 0 4Z"/></svg>`;
+                } else if (plotName === 'Histogram') {
+                    iconContent = `<svg class="plot-icon inline-block" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M3 3h2v10h4V7h4v4h4v4h4v2H3zm2 12h2v2H5zm4 0h2v2H9zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>`;
+                } else if (plotName === 'Pie Chart') {
+                     iconContent = `<svg class="plot-icon inline-block" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m-1 8V4.07c3.92.49 7 3.85 7 7.93h-6z"/></svg>`;
+                } else {
+                    iconContent = `<div class="plot-icon">${plot.icon}</div>`;
+                }
+
+                card.innerHTML = `
+                    ${iconContent}
+                    <h3 class="plot-title">${plotName}</h3>
+                    <p class="plot-desc">${plot.description}</p>
+                `;
+                card.addEventListener('click', () => openModal(plotName));
+                plotContainer.appendChild(card);
+            }
+
+            // Modal listeners
+            closeModalBtn.addEventListener('click', () => modal.classList.remove('active'));
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+            tabs.forEach(tab => tab.addEventListener('click', () => selectTab(tab.dataset.tab)));
+        }
+
+        function openModal(plotName) {
+            const plot = plotData[plotName];
+            modalTitle.textContent = plotName;
+
+            document.getElementById('when-to-use-pane').innerHTML = plot.when_to_use;
+            document.getElementById('example-pane').innerHTML = `<div class="code-block"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><code>${plot.example}</code></pre></div>`;
+            document.getElementById('attributes-pane').innerHTML = plot.attributes;
+            document.getElementById('errors-pane').innerHTML = plot.errors;
+
+            modal.classList.add('active');
+            selectTab('when-to-use'); // Default to the first tab
+        }
+
+        function selectTab(tabName) {
+            tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.tab === tabName));
+            contentPanes.forEach(pane => pane.classList.toggle('active', pane.id === `${tabName}-pane`));
+        }
+        
+        function copyCode(button) {
+            const pre = button.parentElement.querySelector('pre');
+            const code = pre.textContent;
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = 'Copy';
+            }, 2000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
